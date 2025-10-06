@@ -7,11 +7,11 @@
 *
 * This program is distributed in the hope that it will be useful,
 * but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* MERCHANTABILTY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 * GNU General Public License for more details.
 *
 * You should have received a copy of the GNU General Public License
-* along with this program.  If not, see <http://www.gnu.org/licenses/>.
+* along with this program.  If not, see <http://www.gnu.org/license/>.
 */
  
 #include <pthread.h>
@@ -41,21 +41,23 @@
 
 #define NORTH 0
 #define SOUTH 1
+#define EAST  2
+#define WEST  4
 
 /* TODO */
 /* Add your synchronization variables here */
 
-/* Basic information about simulation.  They are printed/checked at the end 
+/* basic information about simulation.  they are printed/checked at the end 
  * and in assert statements during execution.
  *
- * You are responsible for maintaining the integrity of these variables in the 
+ * you are responsible for maintaining the integrity of these variables in the 
  * code that you develop. 
  */
 
-static int aircraft_on_runway;           /* Total number of aircraft currently on runway */
-static int commercial_on_runway;         /* Total number of commercial aircraft on runway */
-static int cargo_on_runway;              /* Total number of cargo aircraft on runway */
-static int emergency_on_runway;          /* Total number of emergency aircraft on runway */
+static int aircraft_on_runway = 0;       /* Total number of aircraft currently on runway */
+static int commercial_on_runway = 0;     /* Total number of commercial aircraft on runway */
+static int cargo_on_runway = 0;          /* Total number of cargo aircraft on runway */
+static int emergency_on_runway = 0;      /* Total number of emergency aircraft on runway */
 static int aircraft_since_break = 0;     /* Aircraft processed since last controller break */
 static int current_direction = NORTH;    /* Current runway direction (NORTH or SOUTH) */
 static int consecutive_direction = 0;    /* Consecutive aircraft in current direction */
@@ -63,11 +65,11 @@ static int consecutive_direction = 0;    /* Consecutive aircraft in current dire
 
 typedef struct 
 {
-  int arrival_time;    // time between the arrival of this aircraft and the previous aircraft
-  int runway_time;     // time the aircraft needs to spend on the runway
+  int arrival_time;         // time between the arrival of this aircraft and the previous aircraft
+  int runway_time;          // time the aircraft needs to spend on the runway
   int aircraft_id;
-  int aircraft_type;   // COMMERCIAL, CARGO, or EMERGENCY
-  int fuel_reserve;    // randomly assigned fuel reserve (FUEL_MIN to FUEL_MAX seconds)
+  int aircraft_type;        // COMMERCIAL, CARGO, or EMERGENCY
+  int fuel_reserve;         // Randomly assigned fuel reserve (FUEL_MIN to FUEL_MAX seconds)
   time_t arrival_timestamp; // timestamp when aircraft thread was created
 } aircraft_info;
 
@@ -77,19 +79,19 @@ typedef struct
  */
 static int initialize(aircraft_info *ai, char *filename) 
 {
-  aircraft_on_runway = 0;
-  commercial_on_runway = 0;
-  cargo_on_runway = 0;
-  emergency_on_runway = 0;
-  aircraft_since_break = 0;
-  current_direction = NORTH;
+  aircraft_on_runway    = 0;
+  commercial_on_runway  = 0;
+  cargo_on_runway       = 0;
+  emergency_on_runway   = 0;
+  aircraft_since_break  = 0;
+  current_direction     = NORTH;
   consecutive_direction = 0;
 
   /* Initialize your synchronization variables (and 
    * other variables you might use) here
    */
 
-  /* Seed random number generator for fuel reserves */
+  /* seed random number generator for fuel reserves */
   srand(time(NULL));
 
   /* Read in the data file and initialize the aircraft array */
@@ -168,13 +170,13 @@ void *controller_thread(void *arg)
   while (1) 
   {
     /* TODO */
-    /* Add code here to handle aircraft requests, controller breaks,     */
-    /* and runway direction switches.                                    */
-    /* Currently the body of the loop is empty. There's no communication */
-    /* between controller and aircraft, i.e. all aircraft are admitted   */
-    /* without regard for runway capacity, aircraft type, direction,     */
-    /* priorities, and whether the controller needs a break.             */
-    /* You need to add all of this.                                      */
+    /* Add code here to handle aircraft requests, controller breaks,      */
+    /* and runway direction switches.                                     */
+    /* Currently the body of the loop is empty.  There's no communication */
+    /* between controller and aircraft, i.e. all aircraft are admitted    */
+    /* without regard for runway capacity, aircraft type, direction,      */
+    /* priorities, and whether the controller needs a break.              */
+    /* You need to add all of this.                                       */
     
     /* Allow thread to be cancelled */
     pthread_testcancel();
@@ -200,9 +202,9 @@ void commercial_enter(aircraft_info *arg)
   /* controller breaks, fuel levels, emergency priorities, and fairness.   */
   /*  YOUR CODE HERE.                                                      */ 
 
-  aircraft_on_runway = aircraft_on_runway + 1;
-  aircraft_since_break = aircraft_since_break + 1;
-  commercial_on_runway = commercial_on_runway + 1;
+  aircraft_on_runway    = aircraft_on_runway + 1;
+  aircraft_since_break  = aircraft_since_break + 1;
+  commercial_on_runway  = commercial_on_runway + 1;
   consecutive_direction = consecutive_direction + 1;
 }
 
@@ -221,9 +223,9 @@ void cargo_enter(aircraft_info *ai)
   /* controller breaks, fuel levels, emergency priorities, and fairness.   */
   /*  YOUR CODE HERE.                                                      */ 
 
-  aircraft_on_runway = aircraft_on_runway + 1;
-  aircraft_since_break = aircraft_since_break + 1;
-  cargo_on_runway = cargo_on_runway + 1;
+  aircraft_on_runway    = aircraft_on_runway + 1;
+  aircraft_since_break  = aircraft_since_break + 1;
+  cargo_on_runway       = cargo_on_runway + 1;
   consecutive_direction = consecutive_direction + 1;
 }
 
@@ -372,7 +374,8 @@ void* cargo_aircraft(void *ai_ptr)
          current_direction == NORTH ? "NORTH" : "SOUTH");
 
   if (!(aircraft_on_runway <= MAX_RUNWAY_CAPACITY && aircraft_on_runway >= 0)) {
-    printf("ASSERT FAILURE: aircraft_on_runway=%d (should be 0-%d)\n", aircraft_on_runway, MAX_RUNWAY_CAPACITY);
+    printf("ASSERT FAILURE: aircraft_on_runway=%d (should be 0-%d)\n", aircraft_on_runway, 
+            MAX_RUNWAY_CAPACITY);
     printf("Runway state: commercial=%d, cargo=%d, emergency=%d, direction=%s\n", 
            commercial_on_runway, cargo_on_runway, emergency_on_runway,
            current_direction == NORTH ? "NORTH" : "SOUTH");
@@ -381,7 +384,7 @@ void* cargo_aircraft(void *ai_ptr)
   assert(commercial_on_runway >= 0 && commercial_on_runway <= MAX_RUNWAY_CAPACITY);
   assert(cargo_on_runway >= 0 && cargo_on_runway <= MAX_RUNWAY_CAPACITY);
   assert(emergency_on_runway >= 0 && emergency_on_runway <= MAX_RUNWAY_CAPACITY);
-  assert(commercial_on_runway == 0 ); // Commercial and cargo cannot mix
+  assert(commercial_on_runway == 0 ); 
 
   printf("Cargo aircraft %d begins runway operations for %d seconds\n", 
          ai->aircraft_id, ai->runway_time);
@@ -395,7 +398,8 @@ void* cargo_aircraft(void *ai_ptr)
   printf("Cargo aircraft %d has cleared the runway\n", ai->aircraft_id);
 
   if (!(aircraft_on_runway <= MAX_RUNWAY_CAPACITY && aircraft_on_runway >= 0)) {
-    printf("ASSERT FAILURE: aircraft_on_runway=%d (should be 0-%d)\n", aircraft_on_runway, MAX_RUNWAY_CAPACITY);
+    printf("ASSERT FAILURE: aircraft_on_runway=%d (should be 0-%d)\n", 
+           aircraft_on_runway, MAX_RUNWAY_CAPACITY);
     printf("Runway state: commercial=%d, cargo=%d, emergency=%d, direction=%s\n", 
            commercial_on_runway, cargo_on_runway, emergency_on_runway,
            current_direction == NORTH ? "NORTH" : "SOUTH");
@@ -427,7 +431,8 @@ void* emergency_aircraft(void *ai_ptr)
          current_direction == NORTH ? "NORTH" : "SOUTH");
 
   if (!(aircraft_on_runway <= MAX_RUNWAY_CAPACITY && aircraft_on_runway >= 0)) {
-    printf("ASSERT FAILURE: aircraft_on_runway=%d (should be 0-%d)\n", aircraft_on_runway, MAX_RUNWAY_CAPACITY);
+    printf("ASSERT FAILURE: aircraft_on_runway=%d (should be 0-%d)\n", aircraft_on_runway, 
+            MAX_RUNWAY_CAPACITY);
     printf("Runway state: commercial=%d, cargo=%d, emergency=%d, direction=%s\n", 
            commercial_on_runway, cargo_on_runway, emergency_on_runway,
            current_direction == NORTH ? "NORTH" : "SOUTH");
@@ -449,7 +454,8 @@ void* emergency_aircraft(void *ai_ptr)
   printf("EMERGENCY aircraft %d has cleared the runway\n", ai->aircraft_id);
 
   if (!(aircraft_on_runway <= MAX_RUNWAY_CAPACITY && aircraft_on_runway >= 0)) {
-    printf("ASSERT FAILURE: aircraft_on_runway=%d (should be 0-%d)\n", aircraft_on_runway, MAX_RUNWAY_CAPACITY);
+    printf("ASSERT FAILURE: aircraft_on_runway=%d (should be 0-%d)\n", 
+           aircraft_on_runway, MAX_RUNWAY_CAPACITY);
     printf("Runway state: commercial=%d, cargo=%d, emergency=%d, direction=%s\n", 
            commercial_on_runway, cargo_on_runway, emergency_on_runway,
            current_direction == NORTH ? "NORTH" : "SOUTH");
@@ -515,7 +521,7 @@ int main(int nargs, char **args)
       result = pthread_create(&aircraft_tid[i], NULL, cargo_aircraft, 
                              (void *)&ai[i]);
     }
-    else // EMERGENCY
+    else 
     {
       result = pthread_create(&aircraft_tid[i], NULL, emergency_aircraft, 
                              (void *)&ai[i]);
