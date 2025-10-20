@@ -46,7 +46,10 @@
 
 /* TODO */
 /* Add your synchronization variables here */
-
+pthread_mutex_t runway_mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t runway_free = PTHREAD_COND_INITIALIZER;
+pthread_cond_t turn = PTHREAD_COND_INITIALIZER;
+sem_t runway_capacity_sem;
 /* basic information about simulation.  they are printed/checked at the end 
  * and in assert statements during execution.
  *
@@ -90,6 +93,10 @@ static int initialize(aircraft_info *ai, char *filename)
   /* Initialize your synchronization variables (and 
    * other variables you might use) here
    */
+
+  //creates semaphore
+  sem_init(&runway_capacity_sem, 0, MAX_RUNWAY_CAPACITY);
+  
 
   /* seed random number generator for fuel reserves */
   srand(time(NULL));
@@ -201,11 +208,20 @@ void commercial_enter(aircraft_info *arg)
   /* Consider: runway capacity, direction (commercial prefer NORTH),       */
   /* controller breaks, fuel levels, emergency priorities, and fairness.   */
   /*  YOUR CODE HERE.                                                      */ 
+  sem_wait(&runway_capacity_sem);
+
+  pthread_mutex_lock(&runway_mutex);
+  
+  while(cargo_on_runway > 0){
+    pthread_cond_wait(&turn, &runway_mutex);
+  }
 
   aircraft_on_runway    = aircraft_on_runway + 1;
   aircraft_since_break  = aircraft_since_break + 1;
   commercial_on_runway  = commercial_on_runway + 1;
   consecutive_direction = consecutive_direction + 1;
+
+  pthread_mutex_unlock(&runway_mutex);
 }
 
 /* Code executed by a cargo aircraft to enter the runway.
